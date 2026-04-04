@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Academic Digital Twin | UCF</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="top-nav">
+        <div class="left-buttons">
+            <a href="#" class="pill-btn">Info</a>
+            <a href="#" class="pill-btn">LinkedIn</a>
+        </div>
+        <div class="right-buttons">
+            <a href="#" class="pill-btn">My Profile</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="welcome-section">
+            <h1>Welcome to your <strong>Academic Digital Twin!</strong></h1>
+            <div class="info-card">
+                <p>The Academic Digital Twin (ADT) is a personalized AI simulation model that forecasts probable future outcomes based on your patterns.</p>
+            </div>
+            <a href="{{ url_for('survey') }}" class="cta-btn">Click here to enter data!</a>
+        </section>
+    </main>
+
+    <div class="pegasus-corner">
+        <img src="{{ url_for('static', filename='pegasus.png') }}" alt="UCF Pegasus" class="logo">
+    </div>
+</body>
+</html>
