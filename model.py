@@ -1,10 +1,17 @@
-import numpy as np
 import joblib
+import numpy as np
+import os
 
 def predict_student_outcome(student):
+    model_path = 'academic_twin_model.pkl'
+    
+    if not os.path.exists(model_path):
+        return {"error": "Run trainmodel.py first!"}
+
     try:
-        bundle = joblib.load('academic_twin_model.pkl')
+        bundle = joblib.load(model_path)
         
+        # Must be in the EXACT same order as X in trainmodel.py
         features = np.array([[
             float(student['current_gpa']),
             int(student['failed_courses']),
@@ -16,23 +23,19 @@ def predict_student_outcome(student):
             int(student['extracurricular_load'])
         ]])
 
-        pred_gpa = bundle['gpa_model'].predict(features)[0]
-        pred_risk = bundle['risk_model'].predict(features)[0]
-        pred_burnout = bundle['burnout_model'].predict(features)[0]
-
-        recommendations = []
-        if int(student['work_hours_per_week']) > 20:
-            recommendations.append("High work hours detected. Consider a 15h cap to protect your GPA.")
-        if float(student['sleep_hours']) < 6:
-            recommendations.append("Sleep deprivation is your highest risk factor for burnout.")
-        if not recommendations:
-            recommendations.append("Current load is balanced. Continue your current routine.")
-
         return {
-            "projected_gpa": round(max(0, min(4.0, float(pred_gpa))), 2),
-            "risk_score": int(max(0, min(100, pred_risk))),
-            "burnout_probability": int(max(0, min(100, pred_burnout))),
-            "recommendations": recommendations
+            "projected_gpa": round(float(bundle['gpa_model'].predict(features)[0]), 2),
+            "risk_score": int(bundle['risk_model'].predict(features)[0]),
+            "burnout_probability": int(bundle['burnout_model'].predict(features)[0]),
+            "recommendations": generate_recs(student)
         }
-    except Exception as e:
-        return {"error": "Prediction failed. Check model file."}
+    except:
+        return {"error": "Prediction failed."}
+
+def generate_recs(student):
+    recs = []
+    if int(student['work_hours_per_week']) > 20:
+        recs.append("High work hours detected. Consider a 15h cap.")
+    if float(student['sleep_hours']) < 6:
+        recs.append("Prioritize sleep to reduce burnout risk.")
+    return recs if recs else ["Current load is balanced."]
