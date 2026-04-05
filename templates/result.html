@@ -6,22 +6,38 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>Your Twin's Forecast</h1>
-        <div class="info-card">
-            <h2>Projected GPA: <span style="color: white;">{{ prediction.projected_gpa }}</span></h2>
-            <p>Risk Score: {{ prediction.risk_score }}/100</p>
-            <p>Burnout Probability: {{ prediction.burnout_probability }}%</p>
-        </div>
-        <div class="advice-section" style="max-width: 600px; margin: 0 auto; text-align: left;">
-            <h3 style="color: #FFC904;">Twin Advice:</h3>
-            <ul>
-                {% for item in prediction.recommendations %}
-                    <li>{{ item }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        <a href="{{ url_for('home') }}" class="pill-btn" style="margin-top: 30px;">Restart Simulation</a>
+    <header class="top-nav">
+        <a href="/" class="pill-btn">Home</a>
+    </header>
+    <main class="container">
+        <section class="welcome-section">
+            <h1>Simulation <strong>Complete</strong></h1>
+            
+            <div class="info-card" style="text-align: left;">
+                <h2 style="border-bottom: 2px solid black; padding-bottom: 10px;">{{ student.student_name }}'s Twin Forecast</h2>
+                
+                <div style="margin-top: 20px;">
+                    <p><strong>Projected GPA:</strong> <span style="font-size: 1.5rem;">{{ prediction.projected_gpa }}</span></p>
+                    <p><strong>Academic Risk Score:</strong> {{ prediction.risk_score }}%</p>
+                    <p><strong>Burnout Probability:</strong> {{ prediction.burnout_probability }}%</p>
+                </div>
+
+                <div style="margin-top: 25px; background: rgba(255,255,255,0.4); padding: 15px; border-radius: 15px;">
+                    <h3>Twin Advice:</h3>
+                    <ul>
+                        {% for rec in prediction.recommendations %}
+                            <li>{{ rec }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <a href="/survey" class="cta-btn" style="font-size: 1.1rem;">Try New Scenario</a>
+        </section>
+    </main>
+    
+    <div class="pegasus-corner">
+        <img src="{{ url_for('static', filename='pegasus.png') }}" alt="UCF Pegasus" class="logo">
     </div>
 </body>
 </html>
