@@ -9,11 +9,13 @@ def home():
 
 @app.route("/survey")
 def survey():
-    return render_template('survey.html')
+    return render_template("survey.html")
 
 @app.route("/run-simulation", methods=["POST"])
 def run_simulation():
+    # Pulling the 'name' attributes from the HTML form
     student_data = {
+        "student_name": request.form.get("student_name", "Knight"),
         "current_gpa": float(request.form.get("gpa") or 0.0),
         "failed_courses": int(request.form.get("failed") or 0),
         "retaken_courses": int(request.form.get("retake") or 0),
@@ -25,7 +27,8 @@ def run_simulation():
     }
     
     prediction = predict_student_outcome(student_data)
-    return render_template("result.html", prediction=prediction)
+    
+    return render_template("result.html", student=student_data, prediction=prediction)
 
 if __name__ == "__main__":
     app.run(debug=True)
