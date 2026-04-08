@@ -9,11 +9,10 @@ def train_brain():
     
     data = pd.DataFrame()
     
-    # NEW: We simulate a 'total_credits' feature to train the model on workload intensity
-    # This aligns with the "Heavy course loads" and "Stacked technical classes" goals [cite: 7, 8]
+    # This aligns with the "Heavy course loads" and "Stacked technical classes" goals 
     data['total_credits'] = (df_src['age'] % 12) + 3 # Simulating a range of 3-15 credits
     
-    # Calculate current GPA based on exam scores [cite: 5, 22]
+    # Calculate current GPA based on exam scores 
     data['current_gpa'] = (df_src['exam_score'] / 25.0).clip(0, 4.0)
     
     data['failed_courses'] = df_src['exam_score'].apply(lambda x: 1 if x < 40 else 0)
@@ -24,21 +23,21 @@ def train_brain():
     data['semester_difficulty'] = (df_src['age'] % 5) + 1
     data['extracurricular_load'] = df_src['extracurricular_participation'].apply(lambda x: 3 if x == 'Yes' else 1)
 
-    # UPDATED LOGIC: Projected GPA now factors in 'total_credits'
-    # More credits (heavy load) slightly increases the difficulty of maintaining GPA [cite: 13, 14]
+    
+   
     data['projected_gpa'] = (
         data['current_gpa'] * 0.50 
         - data['stress_level'] * 0.05 
-        - data['total_credits'] * 0.01  # New: Credits impact
+        - data['total_credits'] * 0.01  
         - data['failed_courses'] * 0.10 
         + data['sleep_hours'] * 0.03 
         - data['work_hours_per_week'] * 0.005
     ).clip(0, 4.0)
 
-    # UPDATED LOGIC: Risk and Burnout now heavily factor in credit load [cite: 15, 17]
+
     data['risk_score'] = (
         data['stress_level'] * 8 
-        + data['total_credits'] * 2     # New: Credit weight
+        + data['total_credits'] * 2     
         + data['failed_courses'] * 15 
         + data['work_hours_per_week'] * 0.8 
         - data['sleep_hours'] * 3 
@@ -47,14 +46,14 @@ def train_brain():
 
     data['burnout_probability'] = (
         data['stress_level'] * 7 
-        + data['total_credits'] * 3     # New: Credit weight
+        + data['total_credits'] * 3     
         + data['work_hours_per_week'] * 0.7 
         - data['sleep_hours'] * 4 
         + data['failed_courses'] * 10 
         - data['current_gpa'] * 5
     ).clip(0, 100)
 
-    # The features must remain consistent with the order used in model.py
+    # consistent with the order used in model.py
     X = data[['current_gpa', 'failed_courses', 'retaken_courses', 'work_hours_per_week', 
              'stress_level', 'sleep_hours', 'semester_difficulty', 'extracurricular_load']]
 
