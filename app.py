@@ -39,4 +39,4 @@ def run_simulation():
     return render_template("result.html", student=data, prediction=prediction)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
