@@ -16,20 +16,10 @@ A Flask-based web application that simulates a student's academic trajectory usi
 - HTML / CSS
 - Jinja Templates
 
-## Installation
+##Installation
 
-Clone the repo:
+- VSCode
 
-git clone https://github.com/yourusername/academic-digital-twin.git
+python3 app.py
 
-Install dependencies:
-
-pip install -r requirements.txt
-
-Run the app:
-
-python app.py
-
-Open in browser:
-
-http://127.0.0.1:5000
+http://127.0.0.1:5001
