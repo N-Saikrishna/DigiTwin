@@ -2,44 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Academic Digital Twin | UCF</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        :root { --ucf-yellow: #ffcc00; --ucf-bg: #fdfae7; }
+        body { background-color: var(--ucf-bg); font-family: 'Inter', sans-serif; }
+        .card { background: white; padding: 2rem; border-radius: 20px; max-width: 800px; margin: 2rem auto; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
+        .course-box { background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px solid #eee; }
+        .btn { background: var(--ucf-yellow); width: 100%; padding: 1rem; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        input, select { width: 100%; padding: 8px; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+    </style>
 </head>
 <body>
-    <header class="top-nav">
-        <div class="left-buttons">
-            <a href="#info-page" class="pill-btn">Info</a>
-           <!-- <a href="#" class="pill-btn">Info</a> -->
-            <!--<a href="https://linkedin.com" class="pill-btn">LinkedIn</a> -->
-            <a href="https://linkedin.com/in/USERNAME" 
-                class="pill-btn"
-                target="_blank"
-                rel= "noopener noreferrer">
-                LinkedIn
-            </a>
-        </div>
-        <div class="right-buttons">
-            <a href="/" class="pill-btn">Home</a>
-        </div>
-    </header>
+    <div class="card">
+        <h1 style="text-align:center;">Academic <strong>Outcome Predictor</strong></h1>
+        <form action="/run-simulation" method="POST">
+            <label>Student Name</label>
+            <input type="text" name="student_name" placeholder="Khushi" required>
 
-    <main class="container">
-        <section class="welcome-section">
-            <h1>Welcome to your <strong>Academic Digital Twin!</strong></h1>
-            <div id="info-page" class="info-card">
-                <p>
-                    The Academic Digital Twin (ADT) is a personalized AI simulation model 
-                    that learns from historical academic patterns to forecast probable 
-                    future outcomes before decisions are made.
-                </p>
+            <h3 style="border-bottom: 2px solid var(--ucf-yellow); padding-bottom: 5px;">Step 1: Past Performance</h3>
+            <div style="display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <label>Current Cumulative GPA</label>
+                    <input type="number" step="0.01" name="current_gpa" required>
+                </div>
+                <div style="flex: 1;">
+                    <label>Total Credits Earned</label>
+                    <input type="number" name="total_credits_earned" required>
+                </div>
             </div>
-            <a href="/survey" class="cta-btn">Click here to enter data!</a>
-        </section>
-    </main>
 
-    <div class="pegasus-corner">
-        <img src="{{ url_for('static', filename='pegasus.png') }}" alt="UCF Pegasus" class="logo">
+            <h3 style="border-bottom: 2px solid var(--ucf-yellow); padding-bottom: 5px;">Step 2: Current Semester (6 Courses)</h3>
+            <div class="grid">
+                {% for i in range(6) %}
+                <div class="course-box">
+                    <label>Grade</label>
+                    <select name="grades[]">
+                        <option value="">-</option>
+                        <option value="4.0">A</option>
+                        <option value="3.0">B</option>
+                        <option value="2.0">C</option>
+                        <option value="1.0">D</option>
+                        <option value="0.0">F</option>
+                    </select>
+                    <label style="display:block; margin-top:10px;">Credits</label>
+                    <input type="number" name="credits[]" placeholder="3">
+                </div>
+                {% endfor %}
+            </div>
+
+            <h3 style="border-bottom: 2px solid var(--ucf-yellow); padding-bottom: 5px;">Step 3: Lifestyle</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div><label>Work Hours/Week</label><input type="number" name="work_hours" value="15"></div>
+                <div><label>Stress (1-10)</label><input type="number" name="stress" value="5"></div>
+                <div><label>Failed Courses</label><input type="number" name="failed" value="0"></div>
+            </div>
+
+            <button type="submit" class="btn" style="margin-top:20px;">Run Forecast</button>
+        </form>
     </div>
 </body>
 </html>
