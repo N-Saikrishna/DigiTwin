@@ -40,7 +40,7 @@ body { background-color: var(--ucf-bg); font-family: 'Inter', sans-serif; displa
 </div> 
 
 <div class="goal-box"> 
-<div style="font-size: 0.9rem; text-transform: uppercase; font-weight: 700;">Target: 3.85 GPA</div> 
+<div style="font-size: 0.75rem; ...">Target: {{ prediction.user_goal }} GPA</div>
 <div class="goal-status">Status: {{ prediction.goal_status }}</div> 
 <div style="font-size: 0.85rem; margin-top: 5px;"> 
 Average grade needed this term: <strong>{{ prediction.target_needed }}</strong> 
