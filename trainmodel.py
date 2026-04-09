@@ -5,7 +5,7 @@ import numpy as np
 
 def train_brain():
     
-    df_src = pd.read_csv('student_habits_performance.csv')
+    df_src = pd.read_csv('data.csv')
     
     data = pd.DataFrame()
     data['current_gpa'] = (df_src['exam_score'] / 25.0).clip(0, 4.0)
