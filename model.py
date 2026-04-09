@@ -1,58 +1,34 @@
-import joblib
-import numpy as np
-import os
-
-def calculate_gpa(grades, credits):
-    """Calculates weighted GPA based on grades and credit hours."""
-    if not grades or not credits or len(grades) != len(credits):
-        return 0.0
+def predict_student_outcome(data):
+    # Retrieve data from dictionary
+    old_gpa = data['current_gpa']
+    old_credits = data['total_credits_earned']
     
-    total_points = sum(g * c for g, c in zip(grades, credits))
-    total_credits = sum(credits)
+    # 1. Calculate Starting Points (GPA * Credits)
+    starting_points = old_gpa * old_credits
     
-    return round(total_points / total_credits, 2) if total_credits > 0 else 0.0
-
-def predict_student_outcome(student):
-    model_path = 'academic_twin_model.pkl'
+    # 2. Calculate New Semester Points (Grade * Credits for each class)
+    # Using zip ensures we pair the right grade with the right credit amount
+    semester_points = sum(g * c for g, c in zip(data['grades'], data['credits']))
+    semester_credits = sum(data['credits'])
     
-    if not os.path.exists(model_path):
-        return {"error": "Run trainmodel.py first!"}
+    # 3. Final Cumulative Calculation
+    total_points = starting_points + semester_points
+    total_sum_credits = old_credits + semester_credits
+    
+    if total_sum_credits > 0:
+        final_gpa = total_points / total_sum_credits
+    else:
+        final_gpa = old_gpa
 
-    try:
-        bundle = joblib.load(model_path)
+    # 4. Determine Risk and Burnout
+    risk = 15 if final_gpa >= 3.0 else 45
+    if data.get('failed_courses', 0) > 0: risk += 20
         
-        
-        calculated_gpa = calculate_gpa(student['grades'], student['credits'])
-        
-        # Must be in the EXACT same order as X in trainmodel.py
-# Using .get(key, default) prevents the "KeyError" crash
-        features = np.array([[
-            float(calculated_gpa), 
-            int(student.get('failed_courses', 0)),
-            int(student.get('retaken_courses', 0)),
-            int(student.get('work_hours_per_week', 0)),
-            int(student.get('stress_level', 5)), # Defaults to 5 if missing
-            float(student.get('sleep_hours', 7)), # Defaults to 7 if missing
-            int(student.get('semester_difficulty', 3)),
-            int(student.get('extracurricular_load', 0))
-        ]])
+    burnout = (data['work_hours'] * 2.2) + (data['stress'] * 4)
 
-        return {
-            "calculated_gpa": calculated_gpa, 
-            "projected_gpa": round(float(bundle['gpa_model'].predict(features)[0]), 2),
-            "risk_score": int(bundle['risk_model'].predict(features)[0]),
-            "burnout_probability": int(bundle['burnout_model'].predict(features)[0]),
-            "recommendations": generate_recs(student, calculated_gpa)
-        }
-    except Exception as e:
-        return {"error": f"Prediction failed: {str(e)}"}
-
-def generate_recs(student, current_gpa):
-    recs = []
-    if int(student['work_hours_per_week']) > 20:
-        recs.append("High work hours detected. Consider a 15h cap.")
-    if float(student['sleep_hours']) < 6:
-        recs.append("Prioritize sleep to reduce burnout risk.")
-    if current_gpa < 2.5:
-        recs.append("GPA is below 2.5. Consider reducing credit load next semester.")
-    return recs if recs else ["Current load is balanced."]
+    return {
+        "projected_gpa": f"{final_gpa:.2f}",
+        "risk_score": min(95, int(risk)),
+        "burnout_rate": min(98, int(burnout)),
+        "advice": "Excellent trajectory! Your GPA is showing strong growth." if final_gpa > old_gpa else "Solid work. Keep focused on your study-life balance."
+    }
