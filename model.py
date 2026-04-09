@@ -25,15 +25,16 @@ def predict_student_outcome(student):
         calculated_gpa = calculate_gpa(student['grades'], student['credits'])
         
         # Must be in the EXACT same order as X in trainmodel.py
+# Using .get(key, default) prevents the "KeyError" crash
         features = np.array([[
             float(calculated_gpa), 
-            int(student['failed_courses']),
-            int(student['retaken_courses']),
-            int(student['work_hours_per_week']),
-            int(student['stress_level']),
-            float(student['sleep_hours']),
-            int(student['semester_difficulty']),
-            int(student['extracurricular_load'])
+            int(student.get('failed_courses', 0)),
+            int(student.get('retaken_courses', 0)),
+            int(student.get('work_hours_per_week', 0)),
+            int(student.get('stress_level', 5)), # Defaults to 5 if missing
+            float(student.get('sleep_hours', 7)), # Defaults to 7 if missing
+            int(student.get('semester_difficulty', 3)),
+            int(student.get('extracurricular_load', 0))
         ]])
 
         return {
