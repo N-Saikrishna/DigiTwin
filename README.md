@@ -7,7 +7,6 @@ A Flask-based web application that simulates a student's academic trajectory usi
 - Academic risk prediction
 - GPA trajectory simulation
 - Burnout probability estimation
-- Graduation delay prediction
 - Scenario-based recommendations
 
 ## Tech Stack
