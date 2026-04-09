@@ -20,14 +20,23 @@ def predict_student_outcome(data):
     else:
         final_gpa = old_gpa
 
+    # --- NEW RANGE LOGIC ---
+    # This creates a "Low" and "High" bound to show a realistic range
+    low_bound = max(0.0, round(final_gpa - 0.12, 2))
+    high_bound = min(4.0, round(final_gpa + 0.08, 2))
+    
+    # This creates the string "3.63 - 3.83"
+    gpa_range_string = f"{low_bound:.2f} - {high_bound:.2f}"
+
     # 4. Determine Risk and Burnout
     risk = 15 if final_gpa >= 3.0 else 45
-    if data.get('failed_courses', 0) > 0: risk += 20
+    if data.get('failed_courses', 0) > 0: 
+        risk += 20
         
     burnout = (data['work_hours'] * 2.2) + (data['stress'] * 4)
 
     return {
-        "projected_gpa": f"{final_gpa:.2f}",
+        "projected_gpa_range": gpa_range_string,
         "risk_score": min(95, int(risk)),
         "burnout_rate": min(98, int(burnout)),
         "advice": "Excellent trajectory! Your GPA is showing strong growth." if final_gpa > old_gpa else "Solid work. Keep focused on your study-life balance."
