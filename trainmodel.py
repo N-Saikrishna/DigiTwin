@@ -1,7 +1,14 @@
 import pandas as pd
-from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import GradientBoostingRegressor
 import joblib
 import numpy as np
+
+
+FEATURES = [                                           
+    'current_gpa', 'failed_courses', 'retaken_courses',
+    'work_hours_per_week', 'stress_level', 'sleep_hours',
+    'semester_difficulty', 'extracurricular_load'
+]
 
 def train_brain():
     # Load the source dataset
@@ -54,13 +61,23 @@ def train_brain():
     ).clip(0, 100)
 
     # consistent with the order used in model.py
-    X = data[['current_gpa', 'failed_courses', 'retaken_courses', 'work_hours_per_week', 
-             'stress_level', 'sleep_hours', 'semester_difficulty', 'extracurricular_load']]
+   # X = data[['current_gpa', 'failed_courses', 'retaken_courses', 'work_hours_per_week', 
+            # 'stress_level', 'sleep_hours', 'semester_difficulty', 'extracurricular_load']] 
+    X = data[FEATURES]
 
+    gb_params = dict(
+        n_estimators=300,       # enough trees to capture the formula shape
+        learning_rate=0.05,     # slow + steady → lower generalisation error
+        max_depth=4,            # shallow trees → avoids overfitting
+        subsample=0.8,          # stochastic boosting for robustness
+        random_state=42,
+    )
+ 
     bundle = {
-        'gpa_model': LinearRegression().fit(X, data['projected_gpa']),
-        'risk_model': LinearRegression().fit(X, data['risk_score']),
-        'burnout_model': LinearRegression().fit(X, data['burnout_probability'])
+        'features'       : FEATURES,
+        'gpa_model'      : GradientBoostingRegressor(**gb_params).fit(X, data['projected_gpa']),
+        'risk_model'     : GradientBoostingRegressor(**gb_params).fit(X, data['risk_score']),
+        'burnout_model'  : GradientBoostingRegressor(**gb_params).fit(X, data['burnout_probability']),
     }
 
     joblib.dump(bundle, 'academic_twin_model.pkl')
