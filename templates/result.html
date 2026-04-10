@@ -180,10 +180,37 @@
     </div>
 
     <script>
+        // Get the GPA from Jinja
+        const finalGpa = parseFloat("{{ prediction.projected_gpa }}");
+        
+        // Define colors: Base Gold/Black + Dynamic Red or Green
+        let confettiColors = ['#ffcc00', '#000000']; // Default UCF
+        
+        if (finalGpa > 3.0) {
+            // Green for > 3.0
+            confettiColors.push('#22c55e', '#166534'); 
+        } else {
+            // Red for <= 3.0
+            confettiColors.push('#ef4444', '#991b1b');
+        }
+
         var end = Date.now() + 3000;
         (function frame() {
-          confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#ffcc00', '#000000'] });
-          confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ffcc00', '#000000'] });
+          confetti({ 
+              particleCount: 4, 
+              angle: 60, 
+              spread: 55, 
+              origin: { x: 0 }, 
+              colors: confettiColors 
+          });
+          confetti({ 
+              particleCount: 4, 
+              angle: 120, 
+              spread: 55, 
+              origin: { x: 1 }, 
+              colors: confettiColors 
+          });
+          
           if (Date.now() < end) { requestAnimationFrame(frame); }
         }());
     </script>
