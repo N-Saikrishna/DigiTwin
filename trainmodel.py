@@ -7,6 +7,17 @@ def train_brain():
     
     df_src = pd.read_csv('data.csv')
     
+#Questions
+    #1.	What is your current cumulative GPA? (0.0–4.0) 
+    #2.	How many courses have you previously failed? 
+    #3.	How many courses have you retaken? 
+    #4.	How many hours per week do you work? 
+    #5.	On a scale of 1–10, how would you rate your current stress level? 
+#6.	On average, how many hours of sleep do you get per night? 
+#7.	How would you rate the difficulty of your upcoming semester? (1–5) 
+#8.	How involved are you in extracurricular activities? (0–5 scale)
+
+    
     data = pd.DataFrame()
     data['current_gpa'] = (df_src['exam_score'] / 25.0).clip(0, 4.0)
     data['failed_courses'] = df_src['exam_score'].apply(lambda x: 1 if x < 40 else 0)
