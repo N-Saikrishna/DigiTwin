@@ -1,61 +1,176 @@
-<!DOCTYPE html> 
-<html lang="en"> 
-<head> 
-<meta charset="UTF-8"> 
-<title>ADT | Simulation Results</title> 
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> 
-<style> 
-:root { --ucf-yellow: #ffcc00; --ucf-bg: #fdfae7; } 
-body { background-color: var(--ucf-bg); font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; } 
-.info-card { background: var(--ucf-yellow); padding: 3rem; border-radius: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 500px; } 
-/* Updated GPA Display for Range */ 
-.gpa-label { font-size: 1.1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: -5px; } 
-.gpa-range { font-size: 3.5rem; font-weight: 900; margin: 10px 0; color: #000; } 
-.gpa-subtext { font-size: 0.9rem; font-weight: 500; opacity: 0.8; margin-top: -10px; margin-bottom: 20px; } 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Academic Digital Twin | Results</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root { 
+            --ucf-yellow: #ffcc00; 
+            --ucf-bg: #fdfae7; 
+        }
+        
+        body { 
+            background-color: var(--ucf-bg); 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            margin: 0; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
 
-.stat-row { font-size: 1.2rem; margin: 10px 0; font-weight: 600; display: flex; justify-content: space-between; padding: 0 10px; } 
-/* Goal Section Styling */ 
-.goal-box { background: rgba(0, 0, 0, 0.05); border: 2px dashed rgba(0,0,0,0.2); border-radius: 20px; padding: 15px; margin: 20px 0; } 
-.goal-status { font-weight: 800; color: #000; } 
-.advice-pill { background: rgba(255,255,255,0.6); padding: 20px; border-radius: 20px; margin-top: 15px; text-align: left; } 
-.pegasus { position: fixed; bottom: 20px; right: 20px; width: 70px; opacity: 0.5; } 
-.home-btn { display: inline-block; margin-top: 30px; padding: 12px 30px; background: #000; color: #fff; border-radius: 50px; text-decoration: none; font-weight: bold; transition: transform 0.2s; } 
-.home-btn:hover { transform: scale(1.05); } 
-</style> 
-</head> 
-<body> 
-<div style="text-align: center;"> 
-<h1 style="margin-bottom: 20px;">Simulation <strong>Complete</strong></h1> 
-<div class="info-card"> 
-<h2 style="margin-top:0; border-bottom: 2px solid rgba(0,0,0,0.1); padding-bottom: 10px;">{{ student.student_name }}'s Twin Forecast</h2> 
-<div class="gpa-label">Projected GPA Range</div> 
-<div class="gpa-range">{{ prediction.gpa_range }}</div> 
-<div class="gpa-subtext">Estimated based on current trajectory</div> 
+        .logo-top-left { position: fixed; top: 20px; left: 20px; width: 80px; z-index: 1000; }
 
-<div class="stat-row"> 
-<span>Academic Risk:</span> <span>{{ prediction.risk_score }}%</span> 
-</div> 
-<div class="stat-row"> 
-<span>Burnout Probability:</span> <span>{{ prediction.burnout_probability }}%</span> 
-</div> 
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 450px 450px;
+            gap: 30px;
+            margin-top: 20px;
+            max-width: 1000px;
+        }
 
-<div class="goal-box"> 
-<div style="font-size: 0.75rem; ...">Target: {{ prediction.user_goal }} GPA</div>
-<div class="goal-status">Status: {{ prediction.goal_status }}</div> 
-<div style="font-size: 0.85rem; margin-top: 5px;"> 
-Average grade needed this term: <strong>{{ prediction.target_needed }}</strong> 
-</div> 
-</div> 
+        .info-card { 
+            background: var(--ucf-yellow); 
+            padding: 2.5rem; 
+            border-radius: 40px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
+            text-align: center; 
+        }
 
-<div class="advice-pill"> 
-<strong>Twin Advice:</strong> 
-{% for rec in prediction.recommendations %} 
-<p style="margin: 5px 0 0 0;">• {{ rec }}</p> 
-{% endfor %} 
-</div> 
-</div> 
-<a href="/" class="home-btn">Try New Scenario</a> 
-</div> 
-<img src="{{ url_for('static', filename='pegasus.png') }}" class="pegasus"> 
-</body> 
+        .advice-card {
+            background: #fff;
+            padding: 2.5rem;
+            border-radius: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            border: 2px solid var(--ucf-yellow);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gpa-big { font-size: 5.5rem; font-weight: 900; margin: 5px 0; color: #000; line-height: 1; }
+        
+        .stat-label {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .metrics-row {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px 0;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .metric-value { font-size: 1.5rem; font-weight: 800; }
+
+        .mascot-container {
+            position: fixed; bottom: 30px; right: 30px;
+            display: flex; flex-direction: column; align-items: center;
+            z-index: 1001; animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
+        .knightro-img { width: 130px; mix-blend-mode: darken; }
+        
+        .speech-bubble {
+            background: white; border: 3px solid #000; border-radius: 20px;
+            padding: 12px; margin-bottom: 10px; font-weight: bold;
+            max-width: 170px; text-align: center; box-shadow: 5px 5px 0px #000;
+        }
+
+        .home-btn {
+            margin-top: 40px; padding: 15px 40px; background: #000; color: var(--ucf-yellow);
+            text-decoration: none; border-radius: 50px; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <img src="{{ url_for('static', filename='pegasus.png') }}" class="logo-top-left">
+
+    <h1 style="font-weight: 800; margin-bottom: 10px;">Simulation Complete</h1>
+    <p style="color: #666; margin-bottom: 30px;">Analyzing data for {{ student.student_name }}</p>
+
+    <div class="dashboard-container">
+        <div class="info-card">
+            <span class="stat-label">Current Forecast</span>
+            <div class="gpa-big">{{ prediction.projected_gpa }}</div>
+            <p style="font-weight: bold;">Range: {{ prediction.projected_gpa_range }}</p>
+
+            <div class="metrics-row">
+                <div>
+                    <span class="stat-label">Academic Risk</span><br>
+                    <span class="metric-value">{{ prediction.risk_score }}%</span>
+                </div>
+                <div>
+                    <span class="stat-label">Burnout Probability</span><br>
+                    <span class="metric-value">{{ prediction.burnout_probability }}%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="advice-card">
+            <h3 style="margin-top: 0; color: #000;">Your Optimal Digital Twin:</h3>
+            <div style="line-height: 1.6; color: #444;">
+                {% set gpa = prediction.projected_gpa|float %}
+                {% set burnout = prediction.burnout_probability|float %}
+
+                <p>
+                {% if burnout > 50 %}
+                    <strong>⚠️ High Burnout Protocol:</strong> Your Twin is detecting significant strain. 
+                    {% if gpa >= 3.5 %}
+                        Even with your high GPA, this pace is unsustainable. You are at risk of a late-semester crash. Prioritize sleep over extra study hours immediately.
+                    {% elif gpa >= 2.6 %}
+                        Your performance is stable, but your stress levels are cannibalizing your focus. We recommend dropping one non-essential commitment to save your semester.
+                    {% else %}
+                        CRITICAL: Low performance and high burnout suggest you are overwhelmed. Seek academic advising and prioritize mental health cycles to reset your trajectory.
+                    {% endif %}
+                {% else %}
+                    <strong>✅ Performance Optimization:</strong> Your Twin shows manageable stress levels.
+                    {% if gpa >= 3.5 %}
+                        You are in the "Elite Tier." Your Twin suggests focusing on networking and internship prep for 2026, as your academic foundation is rock solid.
+                    {% elif gpa >= 2.6 %}
+                        You are in a healthy growth phase. To push into the 3.5+ bracket, increase your active recall sessions by 15% and maintain your current wellness routine.
+                    {% else %}
+                        You have the bandwidth to improve. Your stress is low, meaning you can safely increase your study volume by 5-10 hours a week to bridge the GPA gap.
+                    {% endif %}
+                {% endif %}
+                </p>
+
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                <ul style="padding-left: 20px; margin: 0;">
+                    <li style="margin-bottom: 10px;"><strong>Course Load:</strong> {% if burnout > 50 %}Take a lighter load next term to recover.{% else %}You can maintain or slightly increase your credit load.{% endif %}</li>
+                    <li style="margin-bottom: 10px;"><strong>Sleep Target:</strong> {% if burnout > 50 %}7.5+ hours (Mandatory){% else %}6.5+ hours (Recommended){% endif %}</li>
+                    <li style="margin-bottom: 10px;"><strong>Twin Insight:</strong> {{ prediction.recommendations[0] }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <a href="/" class="home-btn">RE-INITIALIZE SIMULATION</a>
+
+    <div class="mascot-container">
+        <div class="speech-bubble">
+            {% if burnout > 50 %}"Take a breather, Knight! Health first!"
+            {% elif gpa >= 3.5 %}"Charge On! That's a golden GPA!"
+            {% elif gpa >= 2.6 %}"Solid work! Keep the momentum!"
+            {% else %}"Let's hit the John C Hitt Library soon! We can do this!"{% endif %}
+        </div>
+        <img src="{{ url_for('static', filename='knightro.png') }}" class="knightro-img">
+    </div>
+
+    <script>
+        var end = Date.now() + 3000;
+        (function frame() {
+          confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#ffcc00', '#000000'] });
+          confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ffcc00', '#000000'] });
+          if (Date.now() < end) { requestAnimationFrame(frame); }
+        }());
+    </script>
+</body>
 </html>
