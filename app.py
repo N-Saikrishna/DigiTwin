@@ -91,7 +91,7 @@ Keep responses concise, friendly, thruthful, and specific. Show math when doing 
 IMPORTANT: Write response in plain conversational text only."""
 
         message = client.messages.create(
-            model="claude-opus-4-5",
+            model="claude-sonnet-4-5",
             max_tokens=600,
             system=system_prompt,
             messages=[{"role": "user", "content": question}]
