@@ -1,43 +1,20 @@
 def predict_student_outcome(data):
-    # Retrieve data from dictionary
-    old_gpa = data['current_gpa']
-    old_credits = data['total_credits_earned']
+    old_gpa = data.get('current_gpa', 0.0)
+    old_credits = data.get('total_credits_earned', 0.0)
     
-    # 1. Calculate Starting Points (GPA * Credits)
-    starting_points = old_gpa * old_credits
+    semester_points = sum(g * c for g, c in zip(data.get('grades', []), data.get('credits', [])))
+    semester_credits = sum(data.get('credits', []))
     
-    # 2. Calculate New Semester Points (Grade * Credits for each class)
-    # Using zip ensures we pair the right grade with the right credit amount
-    semester_points = sum(g * c for g, c in zip(data['grades'], data['credits']))
-    semester_credits = sum(data['credits'])
-    
-    # 3. Final Cumulative Calculation
-    total_points = starting_points + semester_points
+    total_points = (old_gpa * old_credits) + semester_points
     total_sum_credits = old_credits + semester_credits
     
-    if total_sum_credits > 0:
-        final_gpa = total_points / total_sum_credits
-    else:
-        final_gpa = old_gpa
-
-    # --- NEW RANGE LOGIC ---
-    # This creates a "Low" and "High" bound to show a realistic range
-    low_bound = max(0.0, round(final_gpa - 0.12, 2))
-    high_bound = min(4.0, round(final_gpa + 0.08, 2))
-    
-    # This creates the string "3.63 - 3.83"
-    gpa_range_string = f"{low_bound:.2f} - {high_bound:.2f}"
-
-    # 4. Determine Risk and Burnout
-    risk = 15 if final_gpa >= 3.0 else 45
-    if data.get('failed_courses', 0) > 0: 
-        risk += 20
-        
-    burnout = (data['work_hours'] * 2.2) + (data['stress'] * 4)
+    final_gpa = total_points / total_sum_credits if total_sum_credits > 0 else old_gpa
+    gpa_range_str = f"{max(0, final_gpa-0.05):.2f} - {min(4.0, final_gpa+0.05):.2f}"
 
     return {
-        "projected_gpa_range": gpa_range_string,
-        "risk_score": min(95, int(risk)),
-        "burnout_rate": min(98, int(burnout)),
-        "advice": "Excellent trajectory! Your GPA is showing strong growth." if final_gpa > old_gpa else "Solid work. Keep focused on your study-life balance."
+        "projected_gpa": f"{final_gpa:.2f}",
+        "projected_gpa_range": gpa_range_str,
+        "risk_score": 15 if final_gpa >= 3.0 else 45,
+        "burnout_rate": int((data.get('work_hours', 0) * 2.2) + (data.get('stress', 5) * 4)),
+        "advice": "Excellent trajectory! Your GPA is showing growth." if final_gpa > old_gpa else "Solid standing."
     }
