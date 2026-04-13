@@ -86,7 +86,7 @@ Cumulative GPA = (sum of grade points x credits for ALL courses ever taken) / to
 When answering "what if I fail X", recalculate using 0.0 for that course grade.
 When answering "what grades do I need", solve algebraically for the required GPA points.
 
-Keep responses concise, friendly, thruthful, and specific. Show math when doing GPA calculations. Always give a correct direct answer first, then the explanation.
+Keep responses concise, friendly, truthful, and specific. Show math when doing GPA calculations. Always give a correct direct answer first, then the explanation.
 
 IMPORTANT: Write response in plain conversational text only."""
 
