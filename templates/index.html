@@ -69,11 +69,30 @@
             font-family: inherit;
         }
         label { font-size: 0.85rem; font-weight: 600; color: #555; }
+        /* Spinning animation */
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid #333;
+    border-top: 6px solid #ffcc00; /* UCF Gold */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
     </style>
 </head>
 <body>
+    <div id="loader-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; color: #ffcc00;">
+    <div class="spinner"></div>
+    <h2 style="margin-top: 20px; font-family: 'Inter', sans-serif;">Initializing Digital Twin...</h2>
+    <p style="color: white;">Syncing Academic Parameters</p>
+</div>
     <div class="card">
-        <h1>Academic <strong>Outcome Predictor</strong></h1>
+        <h1>Digital Twin <strong>Initializer</strong></h1>
         <form action="/run-simulation" method="POST">
             
             <label>Student Name</label>
@@ -83,7 +102,7 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
                 <div>
                     <label>Current Cumulative GPA</label>
-                    <input type="number" step="0.01" name="current_gpa" placeholder="4.0" required>
+                    <input type="number" step="0.01" name="current_gpa" placeholder="3.5" required>
                 </div>
                 <div>
                     <label>Total Credits Earned</label>
@@ -91,7 +110,7 @@
                 </div>
                 <div>
                     <label>Target GPA Goal</label>
-                    <input type="number" step="0.01" name="target_gpa" placeholder="e.g. 3.85" required>
+                    <input type="number" step="0.01" name="target_gpa" placeholder="4.0" required>
                 </div>
             </div>
 
@@ -133,5 +152,19 @@
             <button type="submit" class="btn">Run Digital Twin Forecast</button>
         </form>
     </div>
+
+    <script>
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault(); // Stop immediate submission
+            const form = this;
+            const loader = document.getElementById('loader-overlay');
+            
+            loader.style.display = 'flex'; // Show the overlay
+            
+            setTimeout(function() {
+                form.submit(); // Submit the form after 2 seconds
+            }, 2000);
+        });
+    </script>
 </body>
 </html>
