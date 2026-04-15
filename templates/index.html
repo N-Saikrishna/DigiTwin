@@ -69,28 +69,9 @@
             font-family: inherit;
         }
         label { font-size: 0.85rem; font-weight: 600; color: #555; }
-        /* Spinning animation */
-.spinner {
-    width: 60px;
-    height: 60px;
-    border: 6px solid #333;
-    border-top: 6px solid #ffcc00; /* UCF Gold */
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
     </style>
 </head>
 <body>
-    <div id="loader-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; color: #ffcc00;">
-    <div class="spinner"></div>
-    <h2 style="margin-top: 20px; font-family: 'Inter', sans-serif;">Initializing Digital Twin...</h2>
-    <p style="color: white;">Syncing Academic Parameters</p>
-</div>
     <div class="card">
         <h1>Digital Twin <strong>Initializer</strong></h1>
         <form action="/run-simulation" method="POST">
@@ -152,19 +133,5 @@
             <button type="submit" class="btn">Run Digital Twin Forecast</button>
         </form>
     </div>
-
-    <script>
-        document.querySelector('form').addEventListener('submit', function(e) {
-            e.preventDefault(); // Stop immediate submission
-            const form = this;
-            const loader = document.getElementById('loader-overlay');
-            
-            loader.style.display = 'flex'; // Show the overlay
-            
-            setTimeout(function() {
-                form.submit(); // Submit the form after 2 seconds
-            }, 2000);
-        });
-    </script>
 </body>
 </html>
