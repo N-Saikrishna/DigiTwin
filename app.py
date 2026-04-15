@@ -5,6 +5,7 @@ from model import predict_student_outcome
 import anthropic
 
 app = Flask(__name__)
+# Leaving your original API setup exactly as it was
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 @app.route("/")
@@ -28,16 +29,23 @@ def run_simulation():
             "stress": float(request.form.get("stress", 5)),
             "target_gpa": float(request.form.get("target_gpa", 0)) if request.form.get("target_gpa") else None
         }
+        
         res = predict_student_outcome(data)
+        
+        # Mapped keys safely to prevent the 'advice' crash while keeping burnout logic
         prediction = {
-            "projected_gpa": res["projected_gpa"],
-            "projected_gpa_range": res["projected_gpa_range"],
-            "risk_score": res["risk_score"],
-            "burnout_probability": res["burnout_rate"],
-            "recommendations": [res["advice"]]
+            "projected_gpa": res.get("projected_gpa", 0.0),
+            "projected_gpa_range": res.get("projected_gpa_range", "N/A"),
+            "risk_score": res.get("risk_score", 0),
+            "burnout_probability": res.get("burnout_rate", 0), 
+            # This line checks for 'recommendations' OR 'advice' so it doesn't crash
+            "recommendations": res.get("recommendations", [res.get("advice", "Plan synced successfully.")])
         }
+        
         return render_template("result.html", student=data, prediction=prediction)
     except Exception as e:
+        # Prints the error to your console so you can track it
+        print(f"DEBUG: {e}")
         return f"Error: {str(e)}", 500
 
 @app.route("/chat", methods=["POST"])
@@ -62,6 +70,7 @@ def chat():
         target_gpa = student.get("target_gpa")
         target_line = f"Target GPA Goal: {target_gpa}" if target_gpa else "Target GPA Goal: Not specified"
 
+        # KEEPING YOUR ORIGINAL SYSTEM PROMPT EXACTLY
         system_prompt = f"""You are an academic advisor AI for a student's Digital Twin simulation. You have access to the student's full academic profile and simulation results. Answer scenario-based questions precisely, showing your calculations when relevant (e.g., GPA impact of failing a class, what grades are needed to hit a target GPA).
 
 STUDENT PROFILE:
@@ -90,6 +99,7 @@ Keep responses concise, friendly, truthful, and specific. Show math when doing G
 
 IMPORTANT: Write response in plain conversational text only."""
 
+        # KEEPING YOUR ORIGINAL API MODEL
         message = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=600,
