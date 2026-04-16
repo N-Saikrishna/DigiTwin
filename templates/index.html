@@ -70,11 +70,11 @@
        }
        label { font-size: 0.85rem; font-weight: 600; color: #555; }
        input[type="range"] {
-    width: 100%;
-    margin-top: 10px;
-    accent-color: var(--ucf-yellow);
-    cursor: pointer;
-}
+           width: 100%;
+           margin-top: 10px;
+           accent-color: var(--ucf-yellow);
+           cursor: pointer;
+       }
    </style>
 </head>
 <body>
@@ -82,17 +82,25 @@
        <h1>Digital Twin <strong>Initializer</strong></h1>
        <form action="/run-simulation" method="POST">
           
-           <label>Student Name</label>
-           <input type="text" name="student_name" placeholder="Enter your name" required>
+           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+               <div>
+                   <label>Student Name</label>
+                   <input type="text" name="student_name" placeholder="Enter your name" required>
+               </div>
+               <div>
+                   <label>Major</label>
+                   <input type="text" name="major" placeholder="e.g. Computer Science" required>
+               </div>
+           </div>
 
-
-           <label>Semester</label>
+           <label style="margin-top: 15px; display: block;">Semester</label>
            <select name="semester" required>
                <option value="">- Select Semester -</option>
                <option value="Fall">Fall</option>
                <option value="Spring">Spring</option>
                <option value="Summer">Summer</option>
            </select>
+
            <h3>Step 1: Baseline & Goals</h3>
            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
                <div>
@@ -108,7 +116,6 @@
                    <input type="number" step="0.01" name="target_gpa" placeholder="4.0" required>
                </div>
            </div>
-
 
            <h3>Step 2: Current Semester</h3>
            <div class="grid">
@@ -132,7 +139,6 @@
                </div>
                {% endfor %}
            </div>
-
 
            <h3>Step 3: Lifestyle Factors</h3>
            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
@@ -161,7 +167,6 @@
                 >
             </div>
            </div>
-
 
            <button type="submit" class="btn">Run Digital Twin Forecast</button>
        </form>
