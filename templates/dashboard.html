@@ -221,9 +221,37 @@
 
         <div style="margin-bottom: 30px;">
             <h3>Digital Twin Advisory Note</h3>
-            <p style="background: #fcfcfc; padding: 20px; border-radius: 12px; border: 1px solid #eee; line-height: 1.6; color: #444; font-size: 0.95rem;">
-                {{ advice_paragraph if advice_paragraph else "No specific advisory notes for this simulation." }}
-            </p>
+            <div style="background: #fcfcfc; padding: 20px; border-radius: 12px; border: 1px solid #eee; line-height: 1.6; color: #444; font-size: 0.95rem;">
+                {% set current = student.current_gpa|float %}
+                {% set projected = prediction.projected_gpa|float %}
+                {% set work_hrs = student.work_hours|float %}
+                {% set sleep_hrs = student.sleep_hours|float %}
+
+                <p style="margin: 0;">
+                    <strong>GPA Forecast:</strong> 
+                    {% if projected > current %}
+                        Your GPA is showing upward momentum! 
+                    {% elif projected < current %}
+                        Your projected GPA is currently tracking lower than your starting point. 
+                    {% else %}
+                        You are holding steady at your current pace. 
+                    {% endif %}
+                    
+                    <strong>Work-Life Balance:</strong>
+                    {% if work_hrs > 15 %}
+                        Clocking {{ work_hrs }} hours/week is a heavy load that may impact your study time.
+                    {% else %}
+                        Your current work schedule of {{ work_hrs }} hours/week appears manageable.
+                    {% endif %}
+
+                    <strong>Recovery:</strong>
+                    {% if sleep_hrs >= 7 %}
+                        Maintaining {{ sleep_hrs }} hours of sleep is excellent for your cognitive performance and keeping your Twin running at 100%.
+                    {% else %}
+                        Getting only {{ sleep_hrs }} hours of sleep is likely causing burnout and dragging down your academic focus.
+                    {% endif %}
+                </p>
+            </div>
         </div>
 
         <div class="resources-section">
