@@ -1,47 +1,98 @@
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 import joblib
-import numpy as np
+import os
+
+COLS = [
+    'current_gpa', 'failed_courses', 'retaken_courses', 'work_hours_per_week',
+    'stress_level', 'sleep_hours', 'semester_difficulty', 'extracurricular_load'
+]
+
+def derive_targets(data):
+    work_norm = ((data['work_hours_per_week'] - 15) / 25.0).clip(0, 1)
+
+    stress_norm = np.where(
+        data['stress_level'] <= 5,
+        (data['stress_level'] / 5.0) * 0.15,
+        0.15 + ((data['stress_level'] - 5) / 5.0) * 0.85
+    )
+
+    failed_norm     = (data['failed_courses'] / 5.0).clip(0, 1)
+    retaken_norm    = (data['retaken_courses'] / 5.0).clip(0, 1)
+    difficulty_norm = (data['semester_difficulty'] / 5.0)
+    extra_norm      = (data['extracurricular_load'] / 20.0).clip(0, 1)
+    sleep_penalty   = ((8.0 - data['sleep_hours']) / 8.0).clip(0, 1)
+    gpa_deficit     = ((4.0 - data['current_gpa']) / 4.0).clip(0, 1)
+
+    burnout = (
+        stress_norm     * 0.30 +
+        work_norm       * 0.20 +
+        sleep_penalty   * 0.15 +
+        failed_norm     * 0.15 +
+        gpa_deficit     * 0.10 +
+        difficulty_norm * 0.05 +
+        extra_norm      * 0.03 +
+        retaken_norm    * 0.02
+    ) * 100
+
+    risk = (stress_norm * 40 + gpa_deficit * 40 + failed_norm * 20)
+
+    return pd.Series(burnout).clip(0, 100), pd.Series(risk).clip(0, 100)
+
+
+def generate_seed_dataset(n=200):
+    np.random.seed(42)
+    rows = []
+    for _ in range(n):
+        stress    = np.random.randint(1, 11)
+        work_hrs  = np.random.choice([0,5,10,15,20,25,30,35,40],
+                                      p=[0.1,0.1,0.15,0.2,0.15,0.1,0.1,0.05,0.05])
+        sleep     = round(np.random.uniform(4.0, 9.5), 1)
+        failed    = np.random.choice([0,1,2,3,4,5], p=[0.45,0.25,0.15,0.08,0.04,0.03])
+        retaken   = min(failed, np.random.randint(0, failed + 1)) if failed > 0 else 0
+        difficulty = np.random.randint(1, 6)
+        extra     = np.random.choice([0,2,5,8,10,15,20], p=[0.15,0.2,0.25,0.15,0.1,0.1,0.05])
+        base_gpa  = 4.0 - (stress * 0.1) - (failed * 0.25)
+        gpa       = round(np.clip(base_gpa + np.random.normal(0, 0.3), 0.0, 4.0), 2)
+        rows.append({
+            'current_gpa': gpa, 'failed_courses': failed, 'retaken_courses': retaken,
+            'work_hours_per_week': work_hrs, 'stress_level': stress, 'sleep_hours': sleep,
+            'semester_difficulty': difficulty, 'extracurricular_load': extra
+        })
+    df = pd.DataFrame(rows)
+    df.to_csv('data.csv', index=False)
+    print(f"Generated seed dataset with {n} rows -> data.csv")
+    return df
+
 
 def train_brain():
-    df_src = pd.read_csv('data.csv')
+    if os.path.exists('data.csv'):
+        df = pd.read_csv('data.csv')
+        missing = [c for c in COLS if c not in df.columns]
+        if missing:
+            print(f"data.csv missing columns {missing}, regenerating seed...")
+            df = generate_seed_dataset()
+    else:
+        print("No data.csv found, generating seed dataset...")
+        df = generate_seed_dataset()
 
-    # Map CSV columns to the 8 survey questions:
-    # 1. Current cumulative GPA
-    # 2. How many courses have you previously failed?
-    # 3. How many courses have you retaken?
-    # 4. How many hours per week do you work?
-    # 5. Stress level (1-10)
-    # 6. Sleep hours per night
-    # 7. Semester difficulty (1-5)
-    # 8. Extracurricular load (hours/week)
+    if len(df) < 10:
+        print(f"Only {len(df)} rows — padding with seed data...")
+        seed = generate_seed_dataset(100)
+        df = pd.concat([df, seed], ignore_index=True)
 
-    data = pd.DataFrame()
-    data['current_gpa']           = df_src['failed_courses'].apply(lambda x: max(0.0, 4.0 - x * 0.3)).clip(0, 4.0)
-    data['failed_courses']        = df_src['failed_courses']
-    data['retaken_courses']       = df_src['retaken_courses']
-    data['work_hours_per_week']   = df_src['work_hours_per_week']
-    data['stress_level']          = df_src['stress_level']
-    data['sleep_hours']           = df_src['sleep_hours']
-    data['semester_difficulty']   = df_src['semester_difficulty']
-    data['extracurricular_load']  = df_src['extracurricular_load']
+    data = df[COLS].copy()
+    data['burnout_probability'], data['risk_score'] = derive_targets(data)
 
-    # Target: burnout probability is already in the CSV
-    data['burnout_probability']   = df_src['burnout_probability']
-
-    # Derive risk score from burnout + GPA
-    data['risk_score'] = (data['stress_level'] * 6 + (4.0 - data['current_gpa']) * 10).clip(0, 100)
-
-    X = data[['current_gpa', 'failed_courses', 'retaken_courses', 'work_hours_per_week',
-              'stress_level', 'sleep_hours', 'semester_difficulty', 'extracurricular_load']]
-
+    X = data[COLS]
     bundle = {
-        'risk_model':    GradientBoostingRegressor(n_estimators=100, random_state=42).fit(X, data['risk_score']),
-        'burnout_model': GradientBoostingRegressor(n_estimators=100, random_state=42).fit(X, data['burnout_probability'])
+        'risk_model':    GradientBoostingRegressor(n_estimators=300, learning_rate=0.05, max_depth=4, random_state=42).fit(X, data['risk_score']),
+        'burnout_model': GradientBoostingRegressor(n_estimators=300, learning_rate=0.05, max_depth=4, random_state=42).fit(X, data['burnout_probability'])
     }
-
     joblib.dump(bundle, 'academic_twin_model.pkl')
-    print("Model trained successfully.")
+    print(f"Model trained on {len(df)} rows.")
+
 
 if __name__ == "__main__":
     train_brain()
