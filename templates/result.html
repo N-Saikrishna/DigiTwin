@@ -66,21 +66,15 @@
         .battery-level { position: absolute; bottom: 0; width: 100%; border-radius: 2px; transition: height 0.5s ease; }
 
         .caution-box {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 15px;
-            background: #fff5f5;
-            color: #b30000;
-            font-weight: 600;
-            text-align: center;
-            font-size: 0.95rem;
-            border: 1.5px solid #ff4d4d;
+            margin-top: 20px; padding: 15px; border-radius: 15px;
+            background: #fff5f5; color: #b30000; font-weight: 600;
+            text-align: center; font-size: 0.95rem; border: 1.5px solid #ff4d4d;
             animation: glowPulse 1.8s infinite alternate;
         }
 
         @keyframes glowPulse {
             from { box-shadow: 0 0 5px rgba(255, 77, 77, 0.2); }
-            to { box-shadow: 0 0 12px rgba(255, 0, 0, 0.5); }
+            to   { box-shadow: 0 0 12px rgba(255, 0, 0, 0.5); }
         }
 
         .action-buttons {
@@ -109,8 +103,8 @@
         }
 
         @keyframes floatAndRotate {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
+            0%   { transform: translateY(0px); }
+            50%  { transform: translateY(-15px); }
             100% { transform: translateY(0px); }
         }
 
@@ -136,6 +130,26 @@
         .ai-msg { background: #eee; align-self: flex-start; }
         .chat-input-container { display: flex; padding: 12px; border-top: 1px solid #ddd; }
         .chat-input-container input { flex: 1; border: 1px solid #ccc; border-radius: 20px; padding: 8px 15px; outline: none; }
+
+        .spots-section { margin-top: 40px; width: 100%; max-width: 1000px; }
+        .spots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px; }
+        .spot-card {
+            background: #fff; border-radius: 20px; padding: 1.2rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.07); border: 2px solid var(--ucf-yellow);
+            text-align: center; transition: transform 0.2s;
+        }
+        .spot-card:hover { transform: translateY(-4px); }
+        .spot-name { font-weight: 800; font-size: 0.9rem; margin-bottom: 6px; }
+        .spot-rating { color: #f59e0b; font-weight: bold; font-size: 0.85rem; }
+        .spot-address { font-size: 0.75rem; color: #777; margin: 4px 0; }
+        .spot-link {
+            display: inline-block; margin-top: 8px; padding: 6px 14px;
+            background: #000; color: var(--ucf-yellow); border-radius: 20px;
+            font-size: 0.75rem; font-weight: bold; text-decoration: none;
+        }
+        .spot-open { font-size: 0.75rem; margin-top: 4px; }
+        .spots-label { font-size: 1rem; font-weight: 700; margin-bottom: 5px; }
+        .spots-loading { color: #888; font-style: italic; }
     </style>
 </head>
 <body>
@@ -191,7 +205,7 @@
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
             
             <p style="font-weight: bold; font-size: 0.9rem; text-transform: uppercase;">The Breakdown:</p>
-            <ul id="advice-list" style="padding-left: 20px; margin: 0; line-height: 1.8;">
+            <ul style="padding-left: 20px; margin: 0; line-height: 1.8;">
                 <li>
                     <strong>Work-Life Balance:</strong>
                     {% if work_hrs > 15 %}
@@ -226,13 +240,20 @@
         </div>
     </div>
 
+    <div class="spots-section">
+        <p id="spots-message" style="font-size:1.1rem; font-weight:700; margin-bottom:4px;"></p>
+        <h2 style="font-weight: 800; margin-bottom: 0;">📍 Here are some lock-in spots for you:</h2>
+        <p id="spots-label" class="spots-label spots-loading">Finding the best spots for your burnout level...</p>
+        <div id="spots-grid" class="spots-grid"></div>
+    </div>
+
     <div class="action-buttons">
-        <a href="/simulator" class="home-btn">RE-INITIALIZE SIMULATION</a>
+        <a href="/simulator" class="home-btn">RE-INITIALIZE</a>
         
-        <form id="dash-form" action="/dashboard" method="POST" style="margin: 0;">
+        <form action="/dashboard" method="POST" style="margin: 0;">
             <input type="hidden" name="student_data" value="{{ student | tojson | forceescape }}">
-            <input type="hidden" id="prediction_input" name="prediction_data" value="{{ prediction | tojson | forceescape }}">
-            <button type="button" onclick="prepareAndSubmit()" class="dash-btn">KNIGHT REPORT</button>
+            <input type="hidden" name="prediction_data" value="{{ prediction | tojson | forceescape }}">
+            <button type="submit" class="dash-btn">STUDENT SUCCESS DASHBOARD</button>
         </form>
 
         <button onclick="toggleChat()" class="chat-btn">TALK TO YOUR TWIN!</button>
@@ -258,7 +279,7 @@
             {% elif projected >= 2.6 %}
                 "Solid work, Knight. Holding steady like the defense line at the Bounce House!"
             {% else %}
-                "Don't worry, everyone could use a study session at John C. Hitt Library. Let’s hit the books soon!"
+                "Don't worry, everyone could use a study session at John C. Hitt Library. Let's hit the books soon!"
             {% endif %}
         </div>
         <img src="{{ url_for('static', filename='knightro.png') }}" class="knightro-img">
@@ -288,8 +309,8 @@
         });
 
         const projectedGpa = parseFloat(predictionData.projected_gpa);
-        let confettiColors = (projectedGpa >= 3.0) 
-            ? ['#22c55e', '#ffcc00', '#000000'] 
+        let confettiColors = (projectedGpa >= 3.0)
+            ? ['#22c55e', '#ffcc00', '#000000']
             : ['#ef4444', '#000000'];
 
         var end = Date.now() + 1500;
@@ -313,9 +334,9 @@
             const history = document.getElementById('chat-history');
             history.innerHTML += `<div class="msg user-msg">${text}</div>`;
             input.value = '';
-            
+
             const loadId = 'loading-' + Date.now();
-            history.innerHTML += `<div id="${loadId}" class="msg ai-msg" style="color: #666;">Thinking...</div>`;
+            history.innerHTML += `<div id="${loadId}" class="msg ai-msg" style="color:#666;">Thinking...</div>`;
             history.scrollTop = history.scrollHeight;
 
             try {
@@ -326,27 +347,63 @@
                 });
                 const data = await res.json();
                 document.getElementById(loadId).remove();
-                
-                const formattedResponse = data.response.replace(/\n/g, '<br>');
-                history.innerHTML += `<div class="msg ai-msg">${formattedResponse}</div>`;
+
+                if (data.response) {
+                    const formattedResponse = data.response.replace(/\n/g, '<br>');
+                    history.innerHTML += `<div class="msg ai-msg">${formattedResponse}</div>`;
+                } else {
+                    history.innerHTML += `<div class="msg ai-msg" style="color:red;">Error: ${data.error || 'Unknown error'}</div>`;
+                }
                 history.scrollTop = history.scrollHeight;
-            } catch (e) { 
+            } catch (e) {
                 document.getElementById(loadId).remove();
-                history.innerHTML += `<div class="msg ai-msg" style="color: red;">Connection Error.</div>`;
+                history.innerHTML += `<div class="msg ai-msg" style="color:red;">Connection error: ${e.message}</div>`;
             }
         }
 
-        function prepareAndSubmit() {
-            let pred = JSON.parse(document.getElementById('prediction_input').value);
-            const listItems = document.querySelectorAll('#advice-list li');
-            let collectedAdvice = [];
-            listItems.forEach(li => {
-                collectedAdvice.push(li.innerText.replace(/\s+/g, ' ').trim());
-            });
-            pred.recommendations = collectedAdvice;
-            document.getElementById('prediction_input').value = JSON.stringify(pred);
-            document.getElementById('dash-form').submit();
-        }
+        (async function loadSpots() {
+            try {
+                const form = new FormData();
+                form.append('burnout', predictionData.burnout_probability);
+                const res  = await fetch('/study-spots', { method: 'POST', body: form });
+                const data = await res.json();
+
+                const b = parseFloat(predictionData.burnout_probability);
+                const r = parseFloat(predictionData.risk_score);
+                let msg = '';
+                if (b >= 60 && r >= 60) {
+                    msg = '⚠️ Your burnout and academic risk are both high — you need to lock in now. Step away from distractions and get to a quiet spot.';
+                } else if (b >= 60) {
+                    msg = '🔥 Your burnout is taking a toll. Consider switching up your study environment — a change of scenery can reset your focus.';
+                } else if (r >= 60) {
+                    msg = '📉 Your academic risk is elevated. Now is the time to start putting in more hours — here are some solid spots to get it done.';
+                } else if (b >= 30 || r >= 30) {
+                    msg = '📚 Things are manageable but don\'t get comfortable. A consistent study routine will keep your Twin on track.';
+                } else {
+                    msg = '✅ You\'re in a good spot. Keep the momentum going — here are some great places to stay locked in.';
+                }
+                document.getElementById('spots-message').textContent = msg;
+                document.getElementById('spots-label').textContent = data.label || '';
+
+                const grid = document.getElementById('spots-grid');
+                grid.innerHTML = (data.spots || []).map(s => {
+                    const openTag = s.open === true
+                        ? '<p class="spot-open" style="color:#22c55e;">● Open Now</p>'
+                        : s.open === false
+                            ? '<p class="spot-open" style="color:#ef4444;">● Closed</p>'
+                            : '';
+                    return `<div class="spot-card">
+                        <div class="spot-name">${s.name}</div>
+                        <div class="spot-rating">⭐ ${s.rating}</div>
+                        <div class="spot-address">${s.address}</div>
+                        ${openTag}
+                        <a href="${s.map_url}" target="_blank" class="spot-link">Open in Maps</a>
+                    </div>`;
+                }).join('');
+            } catch(e) {
+                document.getElementById('spots-label').textContent = 'Could not load study spots.';
+            }
+        })();
     </script>
 </body>
 </html>
