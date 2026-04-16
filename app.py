@@ -1,216 +1,117 @@
 from dotenv import load_dotenv
 load_dotenv()
+import joblib
 import os
-import json
-from flask import Flask, render_template, request, jsonify
-from model import predict_student_outcome, append_to_dataset
-import anthropic
+import numpy as np
+import pandas as pd
 
-app = Flask(__name__)
-client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-
-if not os.path.exists('academic_twin_model.pkl'):
-    from trainmodel import train_brain
-    train_brain()
+COLS = [
+    'current_gpa', 'failed_courses', 'retaken_courses', 'work_hours_per_week',
+    'stress_level', 'sleep_hours', 'semester_difficulty', 'extracurricular_load'
+]
 
 
-@app.route("/")
-def landing():
-    return render_template("landing.html")
+def calculate_gpa(current_gpa, total_credits_earned, grades, credits):
+    semester_points = semester_credits = 0.0
+    for grade, credit in zip(grades, credits):
+        if credit > 0:
+            semester_points  += grade * credit
+            semester_credits += credit
+    total_points  = (current_gpa * total_credits_earned) + semester_points
+    total_credits = total_credits_earned + semester_credits
+    if total_credits == 0:
+        return current_gpa
+    return max(0.0, min(4.0, total_points / total_credits))
 
 
-@app.route("/simulator")
-def index():
-    return render_template("index.html")
+def _formula_fallback(work_hours, stress, sleep, failed_courses, retaken_courses,
+                      semester_difficulty, extracurricular_load, final_gpa):
+    work_norm = min(max(0, (work_hours - 15) / 25.0), 1.0)
+    if stress <= 5:
+        stress_norm = (stress / 5.0) * 0.15
+    else:
+        stress_norm = 0.15 + ((stress - 5) / 5.0) * 0.85
+    failed_norm     = min(failed_courses / 5.0, 1.0)
+    retaken_norm    = min(retaken_courses / 5.0, 1.0)
+    difficulty_norm = semester_difficulty / 5.0
+    extra_norm      = min(extracurricular_load / 20.0, 1.0)
+    sleep_penalty   = max((8.0 - sleep) / 8.0, 0.0)
+    gpa_deficit     = max(0, 4.0 - final_gpa) / 4.0
+
+    burnout = (
+        stress_norm * 0.30 + work_norm * 0.20 + sleep_penalty * 0.15 +
+        failed_norm * 0.15 + gpa_deficit * 0.10 + difficulty_norm * 0.05 +
+        extra_norm * 0.03 + retaken_norm * 0.02
+    ) * 100
+    risk = (stress_norm * 0.40 + gpa_deficit * 0.40 + failed_norm * 0.20) * 100
+    return int(np.clip(burnout, 5, 98)), int(np.clip(risk, 5, 98))
 
 
-@app.route("/run-simulation", methods=["POST"])
-def run_simulation():
+def append_to_dataset(data, csv_path='data.csv'):
+    row = {
+        'current_gpa':          data.get('current_gpa', 0.0),
+        'failed_courses':       data.get('failed_courses', 0),
+        'retaken_courses':      data.get('retaken_courses', 0),
+        'work_hours_per_week':  data.get('work_hours', 0),
+        'stress_level':         data.get('stress', 5),
+        'sleep_hours':          data.get('sleep_hours', 7),
+        'semester_difficulty':  data.get('semester_difficulty', 3),
+        'extracurricular_load': data.get('extracurricular_load', 0),
+    }
+    if os.path.exists(csv_path):
+        df = pd.read_csv(csv_path)
+        df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
+    else:
+        df = pd.DataFrame([row])
+    df.to_csv(csv_path, index=False)
     try:
-        raw_credits            = [float(c) for c in request.form.getlist("credits[]") if c]
-        total_semester_credits = sum(raw_credits)
-        semester_type          = request.form.get("semester", "Fall")
-
-        data = {
-            "student_name":         request.form.get("student_name", "Student"),
-            "major":                request.form.get("major", "Information Technology"),
-            "semester":             semester_type,
-            "current_gpa":          float(request.form.get("current_gpa") or request.form.get("gpa") or 0),
-            "total_credits_earned": float(request.form.get("total_credits_earned", 0)),
-            "grades":               [float(g) for g in request.form.getlist("grades[]") if g],
-            "credits":              raw_credits,
-            "work_hours":           float(request.form.get("work_hours", 0)),
-            "stress":               float(request.form.get("stress", 5)),
-            "course_names":         request.form.getlist("course_names[]"),
-            "target_gpa":           float(request.form.get("target_gpa", 0)) if request.form.get("target_gpa") else None,
-            "sleep_hours":          float(request.form.get("sleep_hours") or request.form.get("sleep") or 7),
-            "failed_courses":       float(request.form.get("failed", 0)),
-            "retaken_courses":      float(request.form.get("retake", 0)),
-            "semester_difficulty":  float(request.form.get("difficulty", 3)),
-            "extracurricular_load": float(request.form.get("extra", 0)),
-        }
-
-        append_to_dataset(data)
-        res = predict_student_outcome(data)
-
-        prediction = {
-            "projected_gpa":       res.get("projected_gpa", 0.0),
-            "projected_gpa_range": res.get("projected_gpa_range", "N/A"),
-            "risk_score":          res.get("risk_score", 0),
-            "burnout_probability": res.get("burnout_rate", 0),
-            "recommendations":     res.get("recommendations", [])
-        }
-
-        warning_msg = None
-        if "Summer" in semester_type and total_semester_credits > 8:
-            warning_msg = f"CREDIT OVERLOAD: You are taking {int(total_semester_credits)} credits. Summer max is 8!"
-        elif ("Fall" in semester_type or "Spring" in semester_type) and total_semester_credits > 15:
-            warning_msg = f"CREDIT OVERLOAD: You are taking {int(total_semester_credits)} credits. Fall/Spring max is 15!"
-
-        return render_template("result.html", student=data, prediction=prediction, warning=warning_msg)
-
+        from trainmodel import train_brain
+        train_brain()
     except Exception as e:
-        return f"Error: {str(e)}", 500
+        print(f"Retrain failed: {e}")
 
 
-@app.route("/dashboard", methods=["POST"])
-def dashboard():
-    try:
-        student_data    = json.loads(request.form.get("student_data"))
-        prediction_data = json.loads(request.form.get("prediction_data"))
-        names   = student_data.get("course_names", [])
-        grades  = student_data.get("grades", [])
-        credits = student_data.get("credits", [])
-        course_details = []
-        term_credits = term_points = 0.0
-        for i in range(len(grades)):
-            c_name   = names[i] if i < len(names) and names[i] else f"Course {i+1}"
-            c_grade  = grades[i]
-            c_credit = credits[i]
-            letter   = {4.0:"A",3.0:"B",2.0:"C",1.0:"D",0.0:"F"}.get(c_grade, str(c_grade))
-            course_details.append({"name": c_name, "grade_letter": letter, "credits": c_credit})
-            term_credits += c_credit
-            term_points  += (c_grade * c_credit)
-        term_gpa = (term_points / term_credits) if term_credits > 0 else 0.0
-        return render_template("dashboard.html", student=student_data, prediction=prediction_data,
-                               course_details=course_details, term_gpa=term_gpa, term_credits=term_credits)
-    except Exception as e:
-        return f"Error Loading Dashboard: {str(e)}", 500
+def predict_student_outcome(data):
+    current_gpa          = data.get('current_gpa', 0.0)
+    total_credits_earned = data.get('total_credits_earned', 0.0)
+    grades               = data.get('grades', [])
+    credits              = data.get('credits', [])
+    work_hours           = data.get('work_hours', 0)
+    stress               = data.get('stress', 5)
+    sleep                = data.get('sleep_hours', 7)
+    failed_courses       = data.get('failed_courses', 0)
+    retaken_courses      = data.get('retaken_courses', 0)
+    semester_difficulty  = data.get('semester_difficulty', 3)
+    extracurricular_load = data.get('extracurricular_load', 0)
 
+    final_gpa     = calculate_gpa(current_gpa, total_credits_earned, grades, credits)
+    gpa_range_str = f"{max(0.0, final_gpa - 0.05):.2f} - {min(4.0, final_gpa + 0.05):.2f}"
 
-@app.route("/chat", methods=["POST"])
-def chat():
-    try:
-        body       = request.get_json()
-        question   = body.get("question", "").strip()
-        student    = body.get("student", {})
-        prediction = body.get("prediction", {})
-        if not question:
-            return jsonify({"error": "No question provided"}), 400
-        grades  = student.get("grades", [])
-        credits = student.get("credits", [])
-        courses = []
-        for i, (g, c) in enumerate(zip(grades, credits)):
-            letter = {4.0:"A",3.0:"B",2.0:"C",1.0:"D",0.0:"F"}.get(float(g), str(g))
-            courses.append(f"  Course {i+1}: {letter} ({c} credits)")
-        courses_text = "\n".join(courses) if courses else "  No courses entered"
-        target_gpa  = student.get("target_gpa")
-        target_line = f"Target GPA Goal: {target_gpa}" if target_gpa else "Target GPA Goal: Not specified"
+    burnout_rate = risk_score = 0
+    use_fallback = True
 
-        system_prompt = f"""You are an academic advisor AI for a student's Digital Twin simulation. Answer scenario-based questions precisely.
+    if os.path.exists('academic_twin_model.pkl'):
+        try:
+            bundle = joblib.load('academic_twin_model.pkl')
+            X = pd.DataFrame([[current_gpa, failed_courses, retaken_courses, work_hours,
+                               stress, sleep, semester_difficulty, extracurricular_load]],
+                             columns=COLS)
+            burnout_rate = int(np.clip(bundle['burnout_model'].predict(X)[0], 5, 98))
+            risk_score   = int(np.clip(bundle['risk_model'].predict(X)[0], 5, 98))
+            use_fallback = False
+        except Exception as e:
+            print(f"Model predict failed: {e}")
 
-STUDENT PROFILE:
-- Name: {student.get('student_name', 'Student')}
-- Current Cumulative GPA: {student.get('current_gpa')}
-- Total Credits Earned: {student.get('total_credits_earned')}
-- {target_line}
-
-CURRENT SEMESTER COURSES:
-{courses_text}
-
-SIMULATION RESULTS:
-- Projected GPA: {prediction.get('projected_gpa')}
-- Academic Risk Score: {prediction.get('risk_score')}%
-- Burnout Probability: {prediction.get('burnout_probability')}%
-
-Keep responses concise, friendly, and specific. Show math when doing GPA calculations."""
-
-        message = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=600,
-            system=system_prompt,
-            messages=[{"role": "user", "content": question}]
+    if use_fallback:
+        burnout_rate, risk_score = _formula_fallback(
+            work_hours, stress, sleep, failed_courses,
+            retaken_courses, semester_difficulty, extracurricular_load, final_gpa
         )
-        return jsonify({"response": message.content[0].text})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
-
-@app.route("/study-spots", methods=["POST"])
-def study_spots():
-    try:
-        import requests
-        burnout = float(request.form.get("burnout", 50))
-        api_key = os.environ.get("GOOGLE_PLACES_API_KEY", "")
-
-        if burnout >= 60:
-            keyword = "quiet library study UCF"
-            label   = "🔴 High Burnout — You need somewhere quiet and low-stress"
-        elif burnout >= 30:
-            keyword = "cafe study spot UCF Orlando"
-            label   = "🟡 Moderate Burnout — A calm cafe might be the move"
-        else:
-            keyword = "group study collaborative UCF"
-            label   = "🟢 Low Burnout — You're good to collaborate and grind"
-
-        spots = []
-
-        if api_key:
-            url    = "https://maps.googleapis.com/maps/api/place/textsearch/json"
-            params = {
-                "query":    keyword,
-                "location": "28.6024,-81.2001",
-                "radius":   3000,
-                "key":      api_key
-            }
-            resp = requests.get(url, params=params, timeout=5)
-            data = resp.json()
-            for place in data.get("results", [])[:4]:
-                spots.append({
-                    "name":    place.get("name"),
-                    "address": place.get("formatted_address", "UCF Campus"),
-                    "rating":  place.get("rating", "N/A"),
-                    "open":    place.get("opening_hours", {}).get("open_now", None),
-                    "map_url": f"https://www.google.com/maps/search/?api=1&query={place.get('name','').replace(' ','+')}&query_place_id={place.get('place_id','')}"
-                })
-        else:
-            if burnout >= 60:
-                spots = [
-                    {"name": "John C. Hitt Library — Floor 4 (Silent)", "address": "12701 Pegasus Dr, Orlando", "rating": 4.5, "open": True, "map_url": "https://maps.google.com/?q=John+C+Hitt+Library+UCF"},
-                    {"name": "Burnett Honors College Reading Room",      "address": "Honors Circle, UCF",        "rating": 4.7, "open": True, "map_url": "https://maps.google.com/?q=Burnett+Honors+College+UCF"},
-                    {"name": "Health Sciences Library",                  "address": "6900 Lake Nona Blvd",       "rating": 4.4, "open": True, "map_url": "https://maps.google.com/?q=UCF+Health+Sciences+Library"},
-                    {"name": "Library Floor 2 — Individual Carrels",    "address": "12701 Pegasus Dr, Orlando", "rating": 4.3, "open": True, "map_url": "https://maps.google.com/?q=John+C+Hitt+Library+UCF"},
-                ]
-            elif burnout >= 30:
-                spots = [
-                    {"name": "Starbucks — Student Union",        "address": "Student Union, UCF",        "rating": 4.2, "open": True, "map_url": "https://maps.google.com/?q=Starbucks+UCF+Student+Union"},
-                    {"name": "Knightro's — Student Union",       "address": "Student Union, UCF",        "rating": 4.1, "open": True, "map_url": "https://maps.google.com/?q=Knightros+UCF"},
-                    {"name": "Library Floor 3 — Collaborative",  "address": "12701 Pegasus Dr, Orlando", "rating": 4.4, "open": True, "map_url": "https://maps.google.com/?q=John+C+Hitt+Library+UCF"},
-                    {"name": "Reflection Pond Lawn",             "address": "UCF Main Campus",           "rating": 4.8, "open": True, "map_url": "https://maps.google.com/?q=Reflection+Pond+UCF"},
-                ]
-            else:
-                spots = [
-                    {"name": "Student Union Group Study Rooms",   "address": "Student Union, UCF",      "rating": 4.3, "open": True, "map_url": "https://maps.google.com/?q=UCF+Student+Union"},
-                    {"name": "Classroom Building 1 — Open Labs", "address": "UCF Main Campus",          "rating": 4.0, "open": True, "map_url": "https://maps.google.com/?q=UCF+CB1"},
-                    {"name": "Engineering Building Atrium",       "address": "UCF Engineering Complex",  "rating": 4.2, "open": True, "map_url": "https://maps.google.com/?q=UCF+Engineering+Building"},
-                    {"name": "Memory Mall",                       "address": "UCF Main Campus",          "rating": 4.6, "open": True, "map_url": "https://maps.google.com/?q=Memory+Mall+UCF"},
-                ]
-
-        return jsonify({"spots": spots, "label": label, "burnout": burnout})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    return {
+        "projected_gpa":       f"{final_gpa:.2f}",
+        "projected_gpa_range": gpa_range_str,
+        "risk_score":          risk_score,
+        "burnout_rate":        burnout_rate,
+        "advice":              "Growth Mode" if final_gpa > current_gpa else "Maintenance Mode"
+    }
