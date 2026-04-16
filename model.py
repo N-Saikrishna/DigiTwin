@@ -62,7 +62,6 @@ def append_to_dataset(data, csv_path='data.csv'):
     else:
         df = pd.DataFrame([row])
     df.to_csv(csv_path, index=False)
-
     try:
         from trainmodel import train_brain
         train_brain()
