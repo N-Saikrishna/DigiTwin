@@ -227,12 +227,12 @@
     </div>
 
     <div class="action-buttons">
-        <a href="/simulator" class="home-btn">RE-INITIALIZE</a>
+        <a href="/simulator" class="home-btn">RE-INITIALIZE SIMULATION</a>
         
         <form action="/dashboard" method="POST" style="margin: 0;">
             <input type="hidden" name="student_data" value="{{ student | tojson | forceescape }}">
             <input type="hidden" name="prediction_data" value="{{ prediction | tojson | forceescape }}">
-            <button type="submit" class="dash-btn">STUDENT SUCCESS DASHBOARD</button>
+            <button type="submit" class="dash-btn">KNIGHT REPORT</button>
         </form>
 
         <button onclick="toggleChat()" class="chat-btn">TALK TO YOUR TWIN!</button>
