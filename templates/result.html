@@ -171,7 +171,7 @@
             <div style="line-height: 1.6; color: #444; margin-bottom: 15px;">
                 <p>
                     {% if projected > current %}
-                        <span style="color: #22c55e;">✅</span> <strong>Insight:</strong> Your Digital Twin is showing upward momentum!
+                        <span style="color: #22c55e;">✅</span> <strong>Insight:</strong> Your GPA is showing upward momentum!
                     {% elif projected < current %}
                         <span style="color: #ef4444;">⚠️</span> <strong>Insight:</strong> Your projected GPA is lower than where you started.
                     {% else %}
@@ -205,7 +205,7 @@
                     {% if projected > current %}
                         Growth Mode! Your Digital Twin is looking strong.
                     {% else %}
-                        Maintenance Mode. Keep an eye on any potential slides.
+                        Maintenance Mode. Keep an eye on any potential obstacles.
                     {% endif %}
                 </li>
             </ul>
@@ -229,7 +229,7 @@
             <button onclick="toggleChat()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
         </div>
         <div id="chat-history" class="chat-history">
-            <div class="msg ai-msg">Hi {{ student.student_name }}! How can I help you tweak the plan?</div>
+            <div class="msg ai-msg">Hi {{ student.student_name }}! Ready to Charge On? Let's look at the stats and see how we can optimize your semester. Where would you like to start?</div>
         </div>
         <div class="chat-input-container">
             <input type="text" id="user-input" placeholder="Ask away..." onkeypress="handleKeyPress(event)">
@@ -243,7 +243,7 @@
             {% elif projected >= 2.6 %}
                 "Solid work, Knight. Holding steady like the defense line at the Bounce House!"
             {% else %}
-                "Time to hit the John C. Hitt library and secure the comeback! We've got this."
+                "Don't worry, everyone could use a study session at John C. Hitt Library. Let’s hit the books soon!"
             {% endif %}
         </div>
         <img src="{{ url_for('static', filename='knightro.png') }}" class="knightro-img">
