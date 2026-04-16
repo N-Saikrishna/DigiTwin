@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Academic Success Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --ucf-yellow: #ffcc00;
+            --ucf-bg: #fdfae7;
+        }
+       
+        body {
+            background-color: var(--ucf-bg);
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            color: #333;
+        }
+
+        .header-container {
+            max-width: 900px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: #000;
+            color: var(--ucf-yellow);
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 1rem;
+        }
+        
+        .action-btn:hover { background: #333; }
+        
+        .back-link {
+            color: #000;
+            text-decoration: none;
+            font-weight: bold;
+            border-bottom: 2px solid var(--ucf-yellow);
+            padding-bottom: 2px;
+        }
+
+        /* Printable Report Container */
+        .report-card {
+            background: #fff;
+            padding: 3rem;
+            border-radius: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border-top: 8px solid var(--ucf-yellow);
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .report-header h1 { margin: 0 0 10px 0; color: #000; }
+        .report-header p { margin: 5px 0; color: #666; font-size: 1.1rem; }
+
+        /* Badges & Warnings */
+        .badge-honor {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #000;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(255, 204, 0, 0.3);
+            border: 2px solid #e6b800;
+        }
+
+        .badge-sap {
+            background: #fff5f5;
+            color: #b30000;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 25px;
+            border: 2px solid #ff4d4d;
+        }
+
+        .sap-link {
+            color: #b30000;
+            text-decoration: underline;
+        }
+
+        /* Course Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0 30px 0;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #000;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .gpa-summary {
+            display: flex;
+            justify-content: space-between;
+            background: #fdfae7;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid var(--ucf-yellow);
+        }
+
+        .gpa-box { text-align: center; }
+        .gpa-box span { display: block; text-transform: uppercase; font-size: 0.8rem; font-weight: bold; color: #555; }
+        .gpa-box strong { font-size: 2rem; color: #000; }
+
+        /* Resources Section */
+        .resources-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #000;
+        }
+
+        .resources-section h3 { margin-top: 0; }
+        .resource-list { list-style: none; padding: 0; margin: 0; }
+        .resource-list li { margin-bottom: 10px; }
+        .resource-list a { color: #0056b3; font-weight: bold; text-decoration: none; }
+        .resource-list a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <a href="javascript:history.back()" class="back-link">← Back to Results</a>
+        <button class="action-btn" onclick="downloadPDF()">Save Report to PDF</button>
+    </div>
+
+    <div id="pdf-content" class="report-card">
+        
+        <div class="report-header">
+            <h1>Official Academic Forecast</h1>
+            <p><strong>Student:</strong> {{ student.student_name }}</p>
+            <p><strong>Major:</strong> {{ student.major }}</p>
+            <p><strong>Term:</strong> {{ student.semester }} 2026</p>
+        </div>
+
+        {% if term_gpa == 4.0 and term_credits >= 12 %}
+        <div class="badge-honor">
+            🌟 PRESIDENT'S HONOR ROLL CONTENDER 🌟
+            <div style="font-size: 0.9rem; font-weight: normal; margin-top: 5px;">Outstanding academic performance detected for the current term.</div>
+        </div>
+        {% endif %}
+
+        {% if prediction.projected_gpa|float < 2.0 %}
+        <div class="badge-sap">
+            ⚠️ WARNING: SATISFACTORY ACADEMIC PROGRESS (SAP) AT RISK ⚠️
+            <div style="font-size: 0.9rem; font-weight: normal; margin-top: 5px;">
+                Your projected cumulative GPA is below the 2.0 threshold required to maintain financial aid. 
+                Please review the <a href="https://www.ucf.edu/financial-aid/policies/satisfactory-academic-progress/" target="_blank" class="sap-link">UCF SAP Policies</a> immediately.
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="gpa-summary">
+            <div class="gpa-box">
+                <span>Starting Cumulative GPA</span>
+                <strong>{{ "%.2f"|format(student.current_gpa) }}</strong>
+            </div>
+            <div class="gpa-box">
+                <span>Term GPA</span>
+                <strong>{{ "%.2f"|format(term_gpa) }}</strong>
+            </div>
+            <div class="gpa-box">
+                <span>Projected Cumulative GPA</span>
+                <strong>{{ prediction.projected_gpa }}</strong>
+            </div>
+        </div>
+
+        <h3>Term Course Load</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Course Name</th>
+                    <th>Credits</th>
+                    <th>Grade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in course_details %}
+                {% if course.credits > 0 %}
+                <tr>
+                    <td><strong>{{ course.name }}</strong></td>
+                    <td>{{ course.credits }}</td>
+                    <td>{{ course.grade_letter }}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="margin-bottom: 30px;">
+            <h3>Digital Twin Advisory Note</h3>
+            <p style="background: #fcfcfc; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                {{ prediction.recommendations[0] }}
+            </p>
+        </div>
+
+        <div class="resources-section">
+            <h3>🛡️ UCF Knight Support Resources</h3>
+            <p style="font-size: 0.9rem; margin-top: -5px; color: #555;">Maximize your potential by utilizing campus resources.</p>
+            <ul class="resource-list">
+                <li>📚 <a href="https://ucfsarc.wordpress.com/" target="_blank">Student Academic Resource Center (SARC)</a> - Free peer tutoring and academic coaching.</li>
+                <li>📝 <a href="https://ucfsi.wordpress.com/" target="_blank">Supplemental Instruction (SI)</a> - Group study sessions for historically difficult courses.</li>
+                <li>💬 <a href="https://caps.sdes.ucf.edu/" target="_blank">Counseling and Psychological Services (CAPS)</a> - Manage stress, anxiety, and burnout.</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <script>
+        function downloadPDF() {
+            // Options for the PDF generator
+            const opt = {
+                margin:       0.5,
+                filename:     '{{ student.student_name }}_Academic_Forecast.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            // Select the report container and trigger the download
+            const element = document.getElementById('pdf-content');
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>
