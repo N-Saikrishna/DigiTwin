@@ -52,12 +52,12 @@ def run_simulation():
             "recommendations": res.get("recommendations", [])
         }
 
-        # 5. Logic for the Caution Box warning (UCF Limits: 15 Fall/Spring, 8 Summer)
+        # 5. Logic for the Caution Box warning (UCF Limits: 17 Fall/Spring, 14 Summer)
         warning_msg = None
-        if "Summer" in semester_type and total_semester_credits > 8:
-            warning_msg = f"CREDIT OVERLOAD: You are taking {int(total_semester_credits)} credits. Summer max is 8!"
-        elif ("Fall" in semester_type or "Spring" in semester_type) and total_semester_credits > 15:
-            warning_msg = f"CREDIT OVERLOAD: You are taking {int(total_semester_credits)} credits. Fall/Spring max is 15!"
+        if "Summer" in semester_type and total_semester_credits > 14:
+            warning_msg = f"CREDIT OVERLOAD: You are taking {int(total_semester_credits)} credits. Summer max is 14!"
+        elif ("Fall" in semester_type or "Spring" in semester_type) and total_semester_credits > 17:
+            warning_msg = f"CREDIT OVERLOAD: You are taking {int(total_semester_credits)} credits. Fall/Spring max is 17!"
         
         return render_template("result.html", student=data, prediction=prediction, warning=warning_msg)
 
