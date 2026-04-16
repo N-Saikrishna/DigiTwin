@@ -204,35 +204,33 @@
 
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
             
-            <p style="font-weight: bold; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 10px;">The Breakdown:</p>
-            <div style="line-height: 1.6; color: #444;">
-                <p style="margin-bottom: 12px;">
+            <p style="font-weight: bold; font-size: 0.9rem; text-transform: uppercase;">The Breakdown:</p>
+            <ul style="padding-left: 20px; margin: 0; line-height: 1.8;">
+                <li>
                     <strong>Work-Life Balance:</strong>
                     {% if work_hrs > 15 %}
                         Clocking {{ work_hrs }} hours/week is a massive load.
                     {% else %}
                         Looking good! Your work hours seem manageable.
                     {% endif %}
-                </p>
-
-                <p style="margin-bottom: 12px;">
+                </li>
+                <li>
                     <strong>Sleep Quality:</strong>
                     {% if sleep_hrs >= 7 %}
                         You're averaging {{ sleep_hrs }} hours of sleep. This is perfect for keeping your Twin functioning at 100%.
                     {% else %}
                         Only {{ sleep_hrs }} hours of sleep? That's definitely dragging down your focus.
                     {% endif %}
-                </p>
-
-                <p style="margin-bottom: 0;">
+                </li>
+                <li>
                     <strong>GPA Trajectory:</strong>
                     {% if projected > current %}
                         Growth Mode! Your Digital Twin is looking strong.
                     {% else %}
                         Maintenance Mode. Keep an eye on any potential obstacles.
                     {% endif %}
-                </p>
-            </div>
+                </li>
+            </ul>
 
             {% if warning %}
             <div class="caution-box">
