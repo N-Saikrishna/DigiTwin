@@ -5,7 +5,6 @@ from model import predict_student_outcome
 import anthropic
 
 app = Flask(__name__)
-# API setup remains untouched
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 @app.route("/")
@@ -55,20 +54,111 @@ def run_simulation():
         # 5. Logic for the Caution Box warning (UCF Limits: 15 Fall/Spring, 8 Summer)
         warning_msg = None
         if "Summer" in semester_type and total_semester_credits > 8:
-            warning_msg = f"CREDIT OVERLOAD: You are taking {int(total_semester_credits)} credits. Summer recommended is 8!"
+            warning_msg = f"CREDIT OVERLOAD: You are taking {int(total_semester_credits)} credits. Summer max is 8!"
         elif ("Fall" in semester_type or "Spring" in semester_type) and total_semester_credits > 15:
-            warning_msg = f"CREDIT OVERLOAD: You are taking {int(total_semester_credits)} credits. Fall/Spring recommended is 15!"
+            warning_msg = f"CREDIT OVERLOAD: You are taking {int(total_semester_credits)} credits. Fall/Spring max is 15!"
         
         return render_template("result.html", student=data, prediction=prediction, warning=warning_msg)
 
     except Exception as e:
         return f"Error: {str(e)}", 500
 
+@app.route("/dashboard", methods=["POST"])
+def dashboard():
+    try:
+        # Parse the JSON strings sent from the hidden form in result.html
+        student_data = json.loads(request.form.get("student_data"))
+        prediction_data = json.loads(request.form.get("prediction_data"))
+        
+        # Combine course arrays into a clean list of dictionaries for the PDF report table
+        names = student_data.get("course_names", [])
+        grades = student_data.get("grades", [])
+        credits = student_data.get("credits", [])
+        
+        course_details = []
+        term_credits = 0
+        term_points = 0.0
+
+        for i in range(len(grades)):
+            c_name = names[i] if i < len(names) and names[i] else f"Course {i+1}"
+            c_grade = grades[i]
+            c_credit = credits[i]
+            
+            # Map numeric grades back to letters for the report
+            letter = {4.0: "A", 3.0: "B", 2.0: "C", 1.0: "D", 0.0: "F"}.get(c_grade, str(c_grade))
+            
+            course_details.append({
+                "name": c_name,
+                "grade_letter": letter,
+                "credits": c_credit
+            })
+            
+            term_credits += c_credit
+            term_points += (c_grade * c_credit)
+            
+        # Calculate the specific term GPA for the Honor Roll logic
+        term_gpa = (term_points / term_credits) if term_credits > 0 else 0.0
+
+        return render_template("dashboard.html", 
+                               student=student_data, 
+                               prediction=prediction_data,
+                               course_details=course_details,
+                               term_gpa=term_gpa,
+                               term_credits=term_credits)
+
+    except Exception as e:
+        return f"Error Loading Dashboard: {str(e)}", 500
+
 @app.route("/chat", methods=["POST"])
 def chat():
-    # Chat logic remains exactly as you have it
-    pass
+    try:
+        body = request.get_json()
+        question = body.get("question", "").strip()
+        student = body.get("student", {})
+        prediction = body.get("prediction", {})
+
+        if not question:
+            return jsonify({"error": "No question provided"}), 400
+
+        grades = student.get("grades", [])
+        credits = student.get("credits", [])
+        courses = []
+        for i, (g, c) in enumerate(zip(grades, credits)):
+            letter = {4.0: "A", 3.0: "B", 2.0: "C", 1.0: "D", 0.0: "F"}.get(float(g), str(g))
+            courses.append(f"  Course {i+1}: {letter} ({c} credits)")
+        courses_text = "\n".join(courses) if courses else "  No courses entered"
+
+        target_gpa = student.get("target_gpa")
+        target_line = f"Target GPA Goal: {target_gpa}" if target_gpa else "Target GPA Goal: Not specified"
+
+        system_prompt = f"""You are an academic advisor AI for a student's Digital Twin simulation. Answer scenario-based questions precisely.
+
+STUDENT PROFILE:
+- Name: {student.get('student_name', 'Student')}
+- Current Cumulative GPA: {student.get('current_gpa')}
+- Total Credits Earned: {student.get('total_credits_earned')}
+- {target_line}
+
+CURRENT SEMESTER COURSES:
+{courses_text}
+
+SIMULATION RESULTS:
+- Projected GPA: {prediction.get('projected_gpa')}
+- Academic Risk Score: {prediction.get('risk_score')}%
+- Burnout Probability: {prediction.get('burnout_probability')}%
+
+Keep responses concise, friendly, and specific. Show math when doing GPA calculations."""
+
+        message = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=600,
+            system=system_prompt,
+            messages=[{"role": "user", "content": question}]
+        )
+
+        return jsonify({"response": message.content[0].text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    # Standard Flask port
     app.run(host="0.0.0.0", port=5000, debug=True)
